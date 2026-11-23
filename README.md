@@ -18,7 +18,7 @@
 O projeto centraliza solicitações de suporte, organiza o atendimento técnico e permite acompanhar cada chamado desde a abertura até a confirmação da resolução.
 
 > [!IMPORTANT]
-> **Em desenvolvimento.** O projeto está na fase inicial de estruturação do MVP. As funcionalidades abaixo representam o escopo planejado e ainda não estão disponíveis.
+> **Em desenvolvimento.** O projeto está na fase inicial de estruturação do MVP. As funcionalidades abaixo representam o escopo planejado.
 
 ## Funcionalidades planejadas
 
@@ -63,10 +63,16 @@ Em um ambiente virtual, instale a aplicação e as dependências de teste:
 
 ```sh
 python -m pip install -e '.[test]'
+```
+
+Antes de iniciar a API, copie `.env.example` para `.env` e preencha `DATABASE_URL` e `SECRET_KEY`. O JWT usa apenas HS256, com prazos positivos e uma chave aleatória de pelo menos 32 bytes. Gere a chave com `python -c "import secrets; print(secrets.token_hex(32))"`.
+
+```sh
+alembic upgrade head
 python -m uvicorn app.main:app --reload
 ```
 
-`GET /` funciona sem banco. Execute os testes com `python -m pytest`. Para usar a camada de dados quando o MySQL estiver disponível, copie `.env.example` para `.env` e preencha `DATABASE_URL` e `SECRET_KEY`. A primeira migração ainda não foi criada.
+`GET /` não abre conexão com o banco. Execute os testes com `python -m pytest`.
 
 ## Licença
 
