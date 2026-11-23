@@ -57,6 +57,17 @@ HelpDesk-api/
 └── README.md
 ```
 
+## Executar localmente
+
+Em um ambiente virtual, instale a aplicação e as dependências de teste:
+
+```sh
+python -m pip install -e '.[test]'
+python -m uvicorn app.main:app --reload
+```
+
+`GET /` funciona sem banco. Execute os testes com `python -m pytest`. Para usar a camada de dados quando o MySQL estiver disponível, copie `.env.example` para `.env` e preencha `DATABASE_URL` e `SECRET_KEY`. A primeira migração ainda não foi criada.
+
 ## Licença
 
 Distribuído sob a licença **MIT**. Consulte o arquivo [LICENSE](LICENSE) para mais detalhes.
