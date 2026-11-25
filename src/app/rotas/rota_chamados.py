@@ -1,6 +1,6 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Path, Query, status
+from fastapi import APIRouter, HTTPException, Path, Query, Request, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -16,6 +16,7 @@ from app.dados.models.comentario_interno import ComentarioInterno
 from app.dados.models.historico_chamado import HistoricoChamado
 from app.dados.models.usuario import Usuario
 from app.dados.perfis import PerfilUsuario
+from app.dados.rate_limit import LIMITE_LISTAGEM_CHAMADOS, limiter
 from app.rotas.validacao import RotaComValidacaoProtegida
 from app.schemas.chamados import (
     CategoriaChamadoAtualizacao,
@@ -122,7 +123,10 @@ def _exigir_status(chamado: Chamados, esperado: StatusChamado) -> None:
 
 
 @rota_chamados.get("", response_model=list[ChamadoLeitura])
+@limiter.limit(LIMITE_LISTAGEM_CHAMADOS)
 def listar_chamados(
+    request: Request,
+    response: Response,
     db: SessaoDb,
     usuario: UsuarioAtual,
     status_chamado: Annotated[

@@ -12,7 +12,18 @@ from app.dados.database import Base
 from app.dados.dependencies import get_db, hash_senha
 from app.dados.models.usuario import Usuario
 from app.dados.perfis import PerfilUsuario
+from app.dados.rate_limit import limiter
 from app.main import app
+
+
+@pytest.fixture(autouse=True)
+def desativar_rate_limit():
+    estado_anterior = limiter.enabled
+    limiter.enabled = False
+    try:
+        yield
+    finally:
+        limiter.enabled = estado_anterior
 
 
 @pytest.fixture(scope="session")

@@ -2,7 +2,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 
 import jwt
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from pwdlib.exceptions import PwdlibError
 from sqlalchemy import select
@@ -10,6 +10,7 @@ from sqlalchemy import select
 from app.dados.config import settings
 from app.dados.dependencies import SessaoDb, hash_senha, nao_autorizado, usuario_do_token
 from app.dados.models.usuario import Usuario
+from app.dados.rate_limit import LIMITE_LOGIN, limiter
 from app.rotas.validacao import RotaComValidacaoProtegida
 from app.schemas.token import RenovacaoToken, TokenAcesso, TokenLogin
 
@@ -40,7 +41,9 @@ def _emitir_token(usuario: Usuario, tipo: Literal["access", "refresh"]) -> str:
 
 
 @rota_auth.post("/login", response_model=TokenLogin)
+@limiter.limit(LIMITE_LOGIN)
 def login(
+    request: Request, response: Response,
     formulario: Annotated[OAuth2PasswordRequestForm, Depends()], db: SessaoDb
 ) -> TokenLogin:
 
