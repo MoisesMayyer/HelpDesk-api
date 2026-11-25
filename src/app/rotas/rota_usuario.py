@@ -5,21 +5,21 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from ..dados.dependencies import (
+from app.dados.dependencies import (
     SessaoDb,
     UsuarioAtual,
     exigir_administrador,
     hash_senha,
 )
-from ..dados.models.usuario import Usuario
-from ..dados.perfis import PerfilUsuario
-from ..schemas.usuario import (
+from app.dados.models.usuario import Usuario
+from app.dados.perfis import PerfilUsuario
+from app.rotas.validacao import RotaComValidacaoProtegida
+from app.schemas.usuario import (
     UsuarioAtualizacao,
     UsuarioAtualizacaoAdmin,
     UsuarioCriacao,
     UsuarioLeitura,
 )
-from .validacao import RotaComValidacaoProtegida
 
 rota_usuario = APIRouter(
     prefix="/usuario", tags=["usuario"], route_class=RotaComValidacaoProtegida
@@ -95,6 +95,12 @@ def _salvar_usuario(usuario: Usuario, db: Session) -> Usuario:
 
     db.refresh(usuario)
     return usuario
+
+@rota_usuario.patch("/admin", response_model=UsuarioLeitura)
+def fazer_admin(usuario: UsuarioAtual, db: SessaoDb) -> Usuario:
+    # rota funcional apenas para facilitar a criação de ADMIN em projetos reais de produção nao se deve criar rotas assim. Caso utilize esse projeto remova essa rota
+    usuario.tipo = PerfilUsuario.ADMINISTRADOR
+    return _salvar_usuario(usuario, db)
 
 
 @rota_usuario.get("", response_model=list[UsuarioLeitura], dependencies=SomenteAdmin)
