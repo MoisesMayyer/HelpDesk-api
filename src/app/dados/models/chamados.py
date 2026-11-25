@@ -3,6 +3,7 @@ from enum import Enum
 
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.dados.database import Base
 
@@ -33,7 +34,10 @@ class Chamados(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     id_usuario = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
-    id_tecnico = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    id_tecnico: Mapped[int | None] = mapped_column(
+        Integer, ForeignKey("usuarios.id"), nullable=True
+    )
+    id_categoria = Column(Integer, ForeignKey("categorias.id"), nullable=False)
     titulo = Column(String(150), nullable=False)
     descricao = Column(Text, nullable=False)
     aberto_em = Column(DateTime, nullable=False, default=agora_utc)
