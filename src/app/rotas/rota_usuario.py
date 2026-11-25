@@ -1,7 +1,8 @@
+from hashlib import sha256
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, status
-from sqlalchemy import select
+from sqlalchemy import select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -98,6 +99,70 @@ def _salvar_usuario(usuario: Usuario, db: Session) -> Usuario:
     db.refresh(usuario)
     return usuario
 
+
+@rota_usuario.post(
+    "/inicializar-admin",
+    response_model=UsuarioLeitura,
+    status_code=status.HTTP_201_CREATED,
+)
+def inicializar_admin(dados: UsuarioCriacao, db: SessaoDb) -> Usuario:
+    # O lock nomeado pertence à conexão, não à transação. Uma conexão dedicada
+    # garante que commit, rollback e liberação ocorram na mesma conexão física.
+    bind = db.get_bind()
+    if bind.dialect.name != "mysql":
+        raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Banco não suportado.")
+
+    with bind.connect() as conexao:
+        banco = conexao.scalar(text("SELECT DATABASE()"))
+        if banco is None:
+            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Banco não selecionado.")
+        nome_lock = "helpdesk-bootstrap-" + sha256(banco.encode()).hexdigest()[:40]
+        try:
+            adquirido = conexao.scalar(
+                text("SELECT GET_LOCK(:nome, 10)"), {"nome": nome_lock}
+            )
+        except Exception:
+            # Um erro de comunicação pode deixar incerto se o servidor adquiriu
+            # o lock; não devolva essa conexão ao pool.
+            conexao.invalidate()
+            raise
+        if adquirido != 1:
+            raise HTTPException(
+                status.HTTP_503_SERVICE_UNAVAILABLE, "Inicialização indisponível."
+            )
+        try:
+            with Session(bind=conexao, autoflush=False) as sessao:
+                if sessao.scalar(select(Usuario.id).limit(1).with_for_update()) is not None:
+                    raise HTTPException(
+                        status.HTTP_409_CONFLICT, "Já existem usuários cadastrados."
+                    )
+                usuario = Usuario(
+                    nome=dados.nome,
+                    email=dados.email,
+                    senha_hash=hash_senha.hash(dados.senha.get_secret_value()),
+                    tipo=PerfilUsuario.ADMINISTRADOR,
+                )
+                sessao.add(usuario)
+                sessao.flush()
+                # A sessão usa uma conexão com transação externa, portanto o commit
+                # deve ser feito na própria conexão antes de liberar o lock.
+                conexao.commit()
+                sessao.refresh(usuario)
+                sessao.expunge(usuario)
+                return usuario
+        finally:
+            try:
+                conexao.rollback()
+                liberado = conexao.scalar(
+                    text("SELECT RELEASE_LOCK(:nome)"), {"nome": nome_lock}
+                )
+                if liberado != 1:
+                    conexao.invalidate()
+            except Exception:
+                conexao.invalidate()
+                raise
+
+
 @rota_usuario.patch("/admin", response_model=UsuarioLeitura)
 def fazer_admin(usuario: UsuarioAtual, db: SessaoDb) -> Usuario:
     # rota funcional apenas para facilitar a criação de ADMIN em projetos reais de produção nao se deve criar rotas assim. Caso utilize esse projeto remova essa rota
@@ -152,7 +217,7 @@ def put_perfil(
 
     if dados.senha is not None:
         usuario.senha_hash = hash_senha.hash(dados.senha.get_secret_value())
-        usuario.versao_token += 1
+        usuario.versao_token = Usuario.versao_token + 1
     return _salvar_usuario(usuario, db)
 
 

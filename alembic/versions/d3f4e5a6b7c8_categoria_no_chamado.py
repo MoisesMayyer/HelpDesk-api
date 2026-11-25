@@ -1,7 +1,4 @@
-"""Associa chamados a categorias.
-
-Chamados anteriores precisam ser categorizados antes desta migração.
-"""
+"""Associa chamados a categorias, preservando chamados anteriores."""
 
 from collections.abc import Sequence
 
@@ -17,12 +14,20 @@ depends_on: str | Sequence[str] | None = None
 def upgrade() -> None:
     if context.is_offline_mode():
         raise RuntimeError("Esta migração requer conexão para verificar chamados existentes.")
-    if op.get_bind().execute(sa.text("SELECT 1 FROM chamados LIMIT 1")).first():
-        raise RuntimeError(
-            "Há chamados sem categoria. Defina uma estratégia de categorização "
-            "e adapte a migração antes de executá-la."
+    conexao = op.get_bind()
+    op.add_column("chamados", sa.Column("id_categoria", sa.Integer(), nullable=True))
+    if conexao.execute(sa.text("SELECT 1 FROM chamados LIMIT 1")).first():
+        resultado = conexao.execute(
+            sa.text("INSERT INTO categorias (nome, ativo) VALUES (:nome, :ativo)"),
+            {"nome": "Geral", "ativo": True},
         )
-    op.add_column("chamados", sa.Column("id_categoria", sa.Integer(), nullable=False))
+        conexao.execute(
+            sa.text("UPDATE chamados SET id_categoria = :categoria"),
+            {"categoria": resultado.lastrowid},
+        )
+    op.alter_column(
+        "chamados", "id_categoria", existing_type=sa.Integer(), nullable=False
+    )
     op.create_foreign_key(
         "fk_chamados_categoria", "chamados", "categorias", ["id_categoria"], ["id"]
     )

@@ -2,9 +2,13 @@ from datetime import UTC, datetime, timedelta
 
 import jwt
 import pytest
+from sqlalchemy.orm import Session
 
 from app.dados.config import settings
+from app.dados.models.usuario import Usuario
 from app.rotas.rota_auth import _emitir_token
+from app.rotas.rota_usuario import put_perfil
+from app.schemas.usuario import UsuarioAtualizacao
 
 
 def test_login(client, usuario):
@@ -96,5 +100,34 @@ def test_reativacao_nao_restabelece_tokens(client, usuario, admin, autenticar):
     assert client.get('/usuario/me', headers=headers).status_code == 401
     assert client.post('/auth/refresh', json={'refresh_token': login['refresh_token']}).status_code == 401
     novo = client.post('/auth/login', data={'username': usuario.email, 'password': 'senha-segura-123'}).json()
+    assert client.get('/usuario/me', headers={'Authorization': f"Bearer {novo['access_token']}"}).status_code == 200
+    assert client.post('/auth/refresh', json={'refresh_token': novo['refresh_token']}).status_code == 200
+
+
+@pytest.mark.parametrize('metodo', ['put', 'delete'])
+def test_troca_senha_concorrente_com_desativacao(client, db, usuario, admin, autenticar, engine_teste, metodo):
+    login = client.post('/auth/login', data={'username': usuario.email, 'password': 'senha-segura-123'}).json()
+    headers_admin = autenticar(admin)
+    usuario_id = usuario.id
+    with Session(engine_teste, autoflush=False) as sessao_senha:
+        usuario_antigo = sessao_senha.get(Usuario, usuario_id)
+        assert usuario_antigo.versao_token == 0
+        if metodo == 'put':
+            resposta = client.put(f'/usuario/{usuario_id}', json={'ativo': False}, headers=headers_admin)
+            assert resposta.status_code == 200
+        else:
+            assert client.delete(f'/usuario/{usuario_id}', headers=headers_admin).status_code == 204
+        assert client.put(f'/usuario/{usuario_id}', json={'ativo': True}, headers=headers_admin).status_code == 200
+        intermediario = client.post('/auth/login', data={'username': usuario.email, 'password': 'senha-segura-123'}).json()
+        put_perfil(UsuarioAtualizacao(senha='nova-senha-123'), usuario_antigo, sessao_senha)
+
+    # O client de teste reutiliza uma sessão; requisições reais usam novas sessões.
+    db.rollback()
+    with Session(engine_teste) as verificacao:
+        assert verificacao.get(Usuario, usuario_id).versao_token == 2
+    for tokens in (login, intermediario):
+        assert client.get('/usuario/me', headers={'Authorization': f"Bearer {tokens['access_token']}"}).status_code == 401
+        assert client.post('/auth/refresh', json={'refresh_token': tokens['refresh_token']}).status_code == 401
+    novo = client.post('/auth/login', data={'username': usuario.email, 'password': 'nova-senha-123'}).json()
     assert client.get('/usuario/me', headers={'Authorization': f"Bearer {novo['access_token']}"}).status_code == 200
     assert client.post('/auth/refresh', json={'refresh_token': novo['refresh_token']}).status_code == 200

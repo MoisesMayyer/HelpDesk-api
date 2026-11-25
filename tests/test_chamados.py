@@ -136,6 +136,46 @@ def test_fluxo_devolucao_fechamento_e_auditoria(ambiente):
     assert all(e["id_chamado"] == cid and e["criado_em"] for e in historico)
 
 
+def test_aguardar_resposta_e_retomar(ambiente):
+    client, _ = ambiente
+    url = f"/chamados/{criar(client)['id']}"
+    usuario(client, 3)
+    assert client.post(url + "/aguardar-resposta").status_code == 403
+    assert client.post(url + "/assumir").status_code == 200
+    assert client.post(url + "/retomar").status_code == 409
+
+    for perfil in (1, 4, 5):
+        usuario(client, perfil)
+        assert client.post(url + "/aguardar-resposta").status_code == 403
+
+    usuario(client, 3)
+    resposta = client.post(url + "/aguardar-resposta")
+    assert resposta.status_code == 200
+    assert resposta.json()["status"] == "aguardando_resposta"
+    assert client.post(url + "/aguardar-resposta").status_code == 409
+    assert client.post(url + "/resolver", json={"resolucao": "Corrigido"}).status_code == 409
+    for perfil in (1, 4, 5):
+        usuario(client, perfil)
+        assert client.post(url + "/retomar").status_code == 403
+
+    usuario(client, 3)
+    resposta = client.post(url + "/retomar")
+    assert resposta.status_code == 200
+    assert resposta.json()["status"] == "em_andamento"
+    assert client.post(url + "/retomar").status_code == 409
+    usuario(client, 5)
+    historico = client.get(url + "/historico").json()
+    mudancas = [(e["anterior"], e["novo"], e["id_usuario"])
+                for e in historico if e["tipo"] == "status"]
+    assert mudancas == [
+        ("aberto", "em_andamento", 3),
+        ("em_andamento", "aguardando_resposta", 3),
+        ("aguardando_resposta", "em_andamento", 3),
+    ]
+    usuario(client, 3)
+    assert client.post(url + "/resolver", json={"resolucao": "Corrigido"}).status_code == 200
+
+
 def test_permissoes_e_comentarios(ambiente):
     client, _ = ambiente
     cid = criar(client)["id"]

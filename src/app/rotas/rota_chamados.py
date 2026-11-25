@@ -275,6 +275,38 @@ def assumir_chamado(
     return _salvar(db, chamado)
 
 
+def _alterar_status_responsavel(
+    chamado_id: int, db: Session, usuario: Usuario,
+    anterior: StatusChamado, novo: StatusChamado,
+) -> Chamados:
+    chamado = _buscar(db, chamado_id, usuario, bloquear=True)
+    _exigir_responsavel(chamado, usuario)
+    _exigir_status(chamado, anterior)
+    chamado.status = novo
+    _registrar(db, chamado, usuario, "status", anterior.value, novo.value)
+    return _salvar(db, chamado)
+
+
+@rota_chamados.post("/{chamado_id}/aguardar-resposta", response_model=ChamadoLeitura)
+def aguardar_resposta(
+    chamado_id: ChamadoId, db: SessaoDb, usuario: UsuarioAtual
+) -> Chamados:
+    return _alterar_status_responsavel(
+        chamado_id, db, usuario,
+        StatusChamado.EM_ANDAMENTO, StatusChamado.AGUARDANDO_RESPOSTA,
+    )
+
+
+@rota_chamados.post("/{chamado_id}/retomar", response_model=ChamadoLeitura)
+def retomar_chamado(
+    chamado_id: ChamadoId, db: SessaoDb, usuario: UsuarioAtual
+) -> Chamados:
+    return _alterar_status_responsavel(
+        chamado_id, db, usuario,
+        StatusChamado.AGUARDANDO_RESPOSTA, StatusChamado.EM_ANDAMENTO,
+    )
+
+
 @rota_chamados.post("/{chamado_id}/resolver", response_model=ChamadoLeitura)
 def resolver_chamado(
     chamado_id: ChamadoId,
