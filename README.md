@@ -72,6 +72,9 @@ alembic upgrade head
 python -m uvicorn app.main:app --reload
 ```
 
+Os imports usam o pacote `app`. Após instalar a aplicação, também é possível
+iniciar dentro de `src/app` com `python -m uvicorn main:app --reload`.
+
 `GET /` não abre conexão com o banco. Execute os testes com `python -m pytest`.
 
 ## Licença

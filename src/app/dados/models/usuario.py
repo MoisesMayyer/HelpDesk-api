@@ -1,8 +1,8 @@
 from sqlalchemy import Boolean, Column, Integer, String
 from sqlalchemy import Enum as SQLEnum
 
-from ..database import Base
-from ..perfis import PerfilUsuario
+from app.dados.database import Base
+from app.dados.perfis import PerfilUsuario
 
 
 class Usuario(Base):

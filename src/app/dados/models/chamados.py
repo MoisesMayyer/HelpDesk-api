@@ -4,7 +4,7 @@ from enum import Enum
 from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy import Enum as SQLEnum
 
-from ..database import Base
+from app.dados.database import Base
 
 
 def agora_utc() -> datetime:

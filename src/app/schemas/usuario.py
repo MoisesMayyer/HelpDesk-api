@@ -13,7 +13,7 @@ from pydantic import (
 )
 from pydantic.json_schema import SkipJsonSchema
 
-from ..dados.perfis import PerfilUsuario
+from app.dados.perfis import PerfilUsuario
 
 NomeUsuario = Annotated[
     str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)

@@ -7,10 +7,10 @@ from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
 from sqlalchemy.orm import Session
 
-from .config import settings
-from .database import SessionLocal
-from .models.usuario import Usuario
-from .perfis import PerfilUsuario
+from app.dados.config import settings
+from app.dados.database import SessionLocal
+from app.dados.models.usuario import Usuario
+from app.dados.perfis import PerfilUsuario
 
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")

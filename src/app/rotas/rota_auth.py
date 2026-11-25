@@ -7,11 +7,11 @@ from fastapi.security import OAuth2PasswordRequestForm
 from pwdlib.exceptions import PwdlibError
 from sqlalchemy import select
 
-from ..dados.config import settings
-from ..dados.dependencies import SessaoDb, hash_senha, nao_autorizado, usuario_do_token
-from ..dados.models.usuario import Usuario
-from ..schemas.token import RenovacaoToken, TokenAcesso, TokenLogin
-from .validacao import RotaComValidacaoProtegida
+from app.dados.config import settings
+from app.dados.dependencies import SessaoDb, hash_senha, nao_autorizado, usuario_do_token
+from app.dados.models.usuario import Usuario
+from app.rotas.validacao import RotaComValidacaoProtegida
+from app.schemas.token import RenovacaoToken, TokenAcesso, TokenLogin
 
 rota_auth = APIRouter(
     prefix="/auth", tags=["autenticação"], route_class=RotaComValidacaoProtegida
