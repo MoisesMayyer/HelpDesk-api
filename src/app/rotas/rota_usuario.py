@@ -69,6 +69,8 @@ def _alterar_acesso(
     if tipo is not None:
         usuario.tipo = tipo
     if ativo is not None:
+        if usuario.ativo and not ativo:
+            usuario.versao_token += 1
         usuario.ativo = ativo
     db.commit()
     return usuario
@@ -150,6 +152,7 @@ def put_perfil(
 
     if dados.senha is not None:
         usuario.senha_hash = hash_senha.hash(dados.senha.get_secret_value())
+        usuario.versao_token += 1
     return _salvar_usuario(usuario, db)
 
 

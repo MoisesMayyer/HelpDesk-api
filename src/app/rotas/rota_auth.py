@@ -21,7 +21,7 @@ rota_auth = APIRouter(
 hash_ficticio = hash_senha.hash("senha fictícia para verificação")
 
 
-def _emitir_token(usuario_id: int, tipo: Literal["access", "refresh"]) -> str:
+def _emitir_token(usuario: Usuario, tipo: Literal["access", "refresh"]) -> str:
     prazo = (
         timedelta(minutes=settings.access_token_expire_minutes)
         if tipo == "access"
@@ -29,9 +29,10 @@ def _emitir_token(usuario_id: int, tipo: Literal["access", "refresh"]) -> str:
     )
     return jwt.encode(
         {
-            "sub": str(usuario_id),
+            "sub": str(usuario.id),
             "exp": datetime.now(UTC) + prazo,
             "tipo": tipo,
+            "versao": usuario.versao_token,
         },
         settings.secret_key,
         algorithm=settings.algorithm,
@@ -55,8 +56,8 @@ def login(
         raise nao_autorizado("E-mail ou senha inválidos.")
 
     return TokenLogin(
-        access_token=_emitir_token(usuario.id, "access"),
-        refresh_token=_emitir_token(usuario.id, "refresh"),
+        access_token=_emitir_token(usuario, "access"),
+        refresh_token=_emitir_token(usuario, "refresh"),
     )
 
 
@@ -66,4 +67,4 @@ def renovar_token(dados: RenovacaoToken, db: SessaoDb) -> TokenAcesso:
     usuario = usuario_do_token(
         dados.refresh_token, "refresh", db, "Token de renovação inválido ou expirado."
     )
-    return TokenAcesso(access_token=_emitir_token(usuario.id, "access"))
+    return TokenAcesso(access_token=_emitir_token(usuario, "access"))

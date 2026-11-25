@@ -41,7 +41,7 @@ def usuario_do_token(
             token,
             settings.secret_key,
             algorithms=[settings.algorithm],
-            options={"require": ["sub", "exp", "tipo"]},
+            options={"require": ["sub", "exp", "tipo", "versao"]},
         )
         usuario_id = int(claims["sub"])
     except (jwt.InvalidTokenError, ValueError, TypeError, OverflowError):
@@ -55,7 +55,12 @@ def usuario_do_token(
         raise nao_autorizado(mensagem)
 
     usuario = db.get(Usuario, usuario_id)
-    if usuario is None or not usuario.ativo:
+    if (
+        usuario is None
+        or not usuario.ativo
+        or type(claims["versao"]) is not int
+        or claims["versao"] != usuario.versao_token
+    ):
         raise nao_autorizado(mensagem)
 
     return usuario

@@ -12,6 +12,7 @@ class Usuario(Base):
     nome = Column(String(150), nullable=False)
     email = Column(String(254), nullable=False, unique=True)
     senha_hash = Column(String(255), nullable=False)
+    versao_token = Column(Integer, nullable=False, default=0, server_default="0")
     tipo = Column(
         SQLEnum(
             PerfilUsuario,
