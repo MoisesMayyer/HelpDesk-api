@@ -8,7 +8,6 @@ from app.dados.dependencies import hash_senha
 from app.dados.models.usuario import Usuario
 from app.dados.perfis import PerfilUsuario
 
-
 DADOS = {"nome": "Primeiro Admin", "email": "primeiro@example.com", "senha": "senha-segura-123"}
 ROTA = "/usuario/inicializar-admin"
 
@@ -31,13 +30,10 @@ def test_usuario_existente_impede_inicializacao(client, criar_usuario, ativo):
     assert client.post(ROTA, json=DADOS).status_code == 409
 
 
-@pytest.mark.parametrize("alteracoes", [
-    {"senha": "curta"},
-    {"senha": "        "},
-    {"email": "invalido"},
-    {"nome": ""},
-    {"tipo": "administrador"},
-])
+@pytest.mark.parametrize(
+    "alteracoes",
+    [{"senha": "curta"}, {"senha": "        "}, {"email": "invalido"}, {"nome": ""}, {"tipo": "administrador"}],
+)
 def test_validacao_nao_expoe_senha(client, alteracoes):
     dados = DADOS | alteracoes
     resposta = client.post(ROTA, json=dados)
@@ -47,13 +43,18 @@ def test_validacao_nao_expoe_senha(client, alteracoes):
 
 def test_lock_liberado_quando_hash_falha(client, monkeypatch, engine_teste):
     with monkeypatch.context() as m:
+
         def falhar(*args):
             raise RuntimeError("falha simulada")
+
         m.setattr(hash_senha, "hash", falhar)
         with pytest.raises(RuntimeError, match="falha simulada"):
             client.post(ROTA, json=DADOS)
     with engine_teste.connect() as conexao:
-        assert conexao.scalar(text("SELECT IS_FREE_LOCK(CONCAT('helpdesk-bootstrap-', LEFT(SHA2(DATABASE(), 256), 40)))")) == 1
+        assert (
+            conexao.scalar(text("SELECT IS_FREE_LOCK(CONCAT('helpdesk-bootstrap-', LEFT(SHA2(DATABASE(), 256), 40)))"))
+            == 1
+        )
     assert client.post(ROTA, json=DADOS).status_code == 201
 
 
@@ -70,4 +71,7 @@ def test_requisicoes_concorrentes_usam_conexoes_reais(client, engine_teste):
     with engine_teste.connect() as conexao:
         assert conexao.scalar(select(func.count()).select_from(Usuario)) == 1
         assert conexao.scalar(select(Usuario.tipo)) == PerfilUsuario.ADMINISTRADOR
-        assert conexao.scalar(text("SELECT IS_FREE_LOCK(CONCAT('helpdesk-bootstrap-', LEFT(SHA2(DATABASE(), 256), 40)))")) == 1
+        assert (
+            conexao.scalar(text("SELECT IS_FREE_LOCK(CONCAT('helpdesk-bootstrap-', LEFT(SHA2(DATABASE(), 256), 40)))"))
+            == 1
+        )

@@ -5,16 +5,17 @@ from pydantic import AfterValidator, BaseModel, ConfigDict, Field, StringConstra
 
 from app.dados.models.chamados import PrioridadeChamado, StatusChamado
 
-TituloChamado = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)
-]
+TituloChamado = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)]
 def validar_texto_mysql(valor: str) -> str:
     try:
         tamanho = len(valor.encode("utf-8"))
+
     except UnicodeEncodeError:
         raise ValueError("O texto contém caracteres inválidos.") from None
+
     if tamanho > 65535:
         raise ValueError("O texto excede o limite de 65535 bytes.")
+
     return valor
 
 

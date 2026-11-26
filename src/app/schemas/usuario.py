@@ -15,21 +15,18 @@ from pydantic.json_schema import SkipJsonSchema
 
 from app.dados.perfis import PerfilUsuario
 
-NomeUsuario = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)
-]
+NomeUsuario = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)]
 EmailUsuario = Annotated[EmailStr, Field(max_length=254)]
 
 
 def validar_senha(senha: SecretStr) -> SecretStr:
     if not senha.get_secret_value().strip():
         raise ValueError("A senha não pode conter apenas espaços em branco.")
+
     return senha
 
 
-SenhaUsuario = Annotated[
-    SecretStr, Field(min_length=8, max_length=128), AfterValidator(validar_senha)
-]
+SenhaUsuario = Annotated[SecretStr, Field(min_length=8, max_length=128), AfterValidator(validar_senha)]
 Omitido = SkipJsonSchema[None]
 
 
@@ -49,10 +46,13 @@ class AtualizacaoParcial(BaseModel):
 
     @model_validator(mode="after")
     def validar_campos_enviados(self) -> Self:
+
         if not self.model_fields_set:
             raise ValueError("Envie ao menos um campo para atualizar.")
+
         if any(getattr(self, campo) is None for campo in self.model_fields_set):
             raise ValueError("Os campos enviados não podem ser nulos.")
+
         return self
 
 

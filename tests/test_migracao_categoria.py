@@ -1,12 +1,12 @@
 from uuid import uuid4
 
 import pytest
-from alembic import command
 from alembic.config import Config
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 
-import app.dados.database as database
+from alembic import command
+from app.dados import database
 
 
 @pytest.fixture
@@ -34,22 +34,26 @@ def test_migracao_preserva_chamados_e_aplica_restricoes(banco_migracao, com_cham
         # Mesmo nome e categoria inativa não devem ser confundidos com a nova.
         conexao.execute(text("INSERT INTO categorias (nome, ativo) VALUES ('Geral', 0)"))
         if com_chamados:
-            conexao.execute(text(
-                "INSERT INTO usuarios (id, nome, email, senha_hash, tipo, ativo, versao_token) "
-                "VALUES (1, 'Pessoa', 'pessoa@example.com', 'hash', 'funcionario', 1, 0)"
-            ))
-            conexao.execute(text(
-                "INSERT INTO chamados (id, id_usuario, titulo, descricao, aberto_em, status, prioridade) "
-                "VALUES (1, 1, 'Primeiro', 'Descrição 1', '2024-01-01', 'aberto', 'alta'), "
-                "(2, 1, 'Segundo', 'Descrição 2', '2024-01-02', 'fechado', 'baixa')"
-            ))
+            conexao.execute(
+                text(
+                    "INSERT INTO usuarios (id, nome, email, senha_hash, tipo, ativo, versao_token) "
+                    "VALUES (1, 'Pessoa', 'pessoa@example.com', 'hash', 'funcionario', 1, 0)"
+                )
+            )
+            conexao.execute(
+                text(
+                    "INSERT INTO chamados (id, id_usuario, titulo, descricao, aberto_em, status, prioridade) "
+                    "VALUES (1, 1, 'Primeiro', 'Descrição 1', '2024-01-01', 'aberto', 'alta'), "
+                    "(2, 1, 'Segundo', 'Descrição 2', '2024-01-02', 'fechado', 'baixa')"
+                )
+            )
 
     command.upgrade(config, "head")
     with engine.connect() as conexao:
         categorias = conexao.execute(text("SELECT id, nome, ativo FROM categorias ORDER BY id")).all()
-        chamados = conexao.execute(text(
-            "SELECT id, titulo, descricao, status, prioridade, id_categoria FROM chamados ORDER BY id"
-        )).all()
+        chamados = conexao.execute(
+            text("SELECT id, titulo, descricao, status, prioridade, id_categoria FROM chamados ORDER BY id")
+        ).all()
         assert categorias[0][1:] == ("Geral", 0)
         if com_chamados:
             assert len(categorias) == 2 and categorias[1][1:] == ("Geral", 1)
@@ -61,8 +65,10 @@ def test_migracao_preserva_chamados_e_aplica_restricoes(banco_migracao, com_cham
             assert len(categorias) == 1 and chamados == []
     coluna = next(c for c in inspect(engine).get_columns("chamados") if c["name"] == "id_categoria")
     assert not coluna["nullable"] and coluna["default"] is None
-    assert any(fk["constrained_columns"] == ["id_categoria"] and fk["referred_table"] == "categorias"
-               for fk in inspect(engine).get_foreign_keys("chamados"))
+    assert any(
+        fk["constrained_columns"] == ["id_categoria"] and fk["referred_table"] == "categorias"
+        for fk in inspect(engine).get_foreign_keys("chamados")
+    )
     if com_chamados:
         with pytest.raises(IntegrityError), engine.begin() as conexao:
             conexao.execute(text("UPDATE chamados SET id_categoria = 999999 WHERE id = 1"))

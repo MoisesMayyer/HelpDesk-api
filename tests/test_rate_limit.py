@@ -34,13 +34,9 @@ def test_login_tem_limite_proprio(monkeypatch):
     try:
         with TestClient(app, client=("192.0.2.2", 1234)) as cliente:
             for _ in range(10):
-                resposta = cliente.post(
-                    "/auth/login", data={"username": "teste@example.com", "password": "x"}
-                )
+                resposta = cliente.post("/auth/login", data={"username": "teste@example.com", "password": "x"})
                 assert resposta.status_code == 401
-            resposta = cliente.post(
-                "/auth/login", data={"username": "teste@example.com", "password": "x"}
-            )
+            resposta = cliente.post("/auth/login", data={"username": "teste@example.com", "password": "x"})
             assert resposta.status_code == 429
             assert int(resposta.headers["retry-after"]) >= 1
             assert cliente.get("/").status_code == 200

@@ -27,16 +27,13 @@ class Settings(BaseSettings):
     @classmethod
     def validar_chave_jwt(cls, chave: str) -> str:
         if not chave.strip() or len(chave.encode("utf-8")) < 32:
-            raise ValueError(
-                "SECRET_KEY deve ser uma chave aleatória de ao menos 32 bytes."
-            )
+            raise ValueError("SECRET_KEY deve ser uma chave aleatória de ao menos 32 bytes.")
+
         return chave
 
     @property
     def cors_origins(self) -> list[str]:
-        return [
-            origem.strip() for origem in self.CORS_ORIGINS.split(",") if origem.strip()
-        ]
+        return [origem.strip() for origem in self.CORS_ORIGINS.split(",") if origem.strip()]
 
 
 settings = Settings()  # type: ignore[call-arg]  # valores vindos do .env

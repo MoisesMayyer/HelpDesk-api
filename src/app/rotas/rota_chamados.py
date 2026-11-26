@@ -1,6 +1,14 @@
 from typing import Annotated, Literal
 
-from fastapi import APIRouter, HTTPException, Path, Query, Request, Response, status
+from fastapi import (
+    APIRouter,
+    HTTPException,
+    Path,
+    Query,
+    Request,
+    Response,
+    status,
+)
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -50,15 +58,20 @@ def _buscar(
     db: Session, chamado_id: int, usuario: Usuario, bloquear: bool = False
 ) -> Chamados:
     consulta = select(Chamados).where(Chamados.id == chamado_id)
+
     if usuario.tipo == PerfilUsuario.FUNCIONARIO:
         consulta = consulta.where(Chamados.id_usuario == usuario.id)
+
     if bloquear:
         consulta = consulta.with_for_update()
+
     chamado = db.scalar(consulta)
+
     if chamado is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, "Chamado não encontrado."
         )
+
     return chamado
 
 
@@ -66,6 +79,7 @@ def _categoria_ativa(db: Session, categoria_id: int) -> None:
     categoria = db.scalar(
         select(Categoria).where(Categoria.id == categoria_id).with_for_update()
     )
+
     if categoria is None or not categoria.ativo:
         raise HTTPException(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -95,11 +109,13 @@ def _registrar(
 def _salvar(db: Session, chamado: Chamados) -> Chamados:
     db.commit()
     db.refresh(chamado)
+
     return chamado
 
 
 def _exigir_responsavel(chamado: Chamados, usuario: Usuario) -> None:
     _exigir_perfil(usuario, PerfilUsuario.TECNICO)
+
     if chamado.id_tecnico != usuario.id:
         raise HTTPException(
             status.HTTP_403_FORBIDDEN,
@@ -184,12 +200,15 @@ def criar_chamado(
     dados: ChamadoCriacao, db: SessaoDb, usuario: UsuarioAtual
 ) -> Chamados:
     _categoria_ativa(db, dados.id_categoria)
+
     chamado = Chamados(**dados.model_dump(), id_usuario=usuario.id)
     db.add(chamado)
     db.flush()
+
     _registrar(
         db, chamado, usuario, "criacao", novo=StatusChamado.ABERTO.value
     )
+
     return _salvar(db, chamado)
 
 
@@ -265,6 +284,7 @@ def assumir_chamado(
         raise HTTPException(
             status.HTTP_409_CONFLICT, "Chamado já possui técnico responsável."
         )
+
     chamado.id_tecnico = usuario.id
     chamado.status = StatusChamado.EM_ANDAMENTO
     _registrar(db, chamado, usuario, "atribuicao", novo=str(usuario.id))
@@ -276,28 +296,39 @@ def assumir_chamado(
         StatusChamado.ABERTO.value,
         chamado.status.value,
     )
+
     return _salvar(db, chamado)
 
 
 def _alterar_status_responsavel(
-    chamado_id: int, db: Session, usuario: Usuario,
-    anterior: StatusChamado, novo: StatusChamado,
+    chamado_id: int,
+    db: Session,
+    usuario: Usuario,
+    anterior: StatusChamado,
+    novo: StatusChamado,
 ) -> Chamados:
     chamado = _buscar(db, chamado_id, usuario, bloquear=True)
     _exigir_responsavel(chamado, usuario)
     _exigir_status(chamado, anterior)
+
     chamado.status = novo
     _registrar(db, chamado, usuario, "status", anterior.value, novo.value)
+
     return _salvar(db, chamado)
 
 
-@rota_chamados.post("/{chamado_id}/aguardar-resposta", response_model=ChamadoLeitura)
+@rota_chamados.post(
+    "/{chamado_id}/aguardar-resposta", response_model=ChamadoLeitura
+)
 def aguardar_resposta(
     chamado_id: ChamadoId, db: SessaoDb, usuario: UsuarioAtual
 ) -> Chamados:
     return _alterar_status_responsavel(
-        chamado_id, db, usuario,
-        StatusChamado.EM_ANDAMENTO, StatusChamado.AGUARDANDO_RESPOSTA,
+        chamado_id,
+        db,
+        usuario,
+        StatusChamado.EM_ANDAMENTO,
+        StatusChamado.AGUARDANDO_RESPOSTA,
     )
 
 
@@ -306,8 +337,11 @@ def retomar_chamado(
     chamado_id: ChamadoId, db: SessaoDb, usuario: UsuarioAtual
 ) -> Chamados:
     return _alterar_status_responsavel(
-        chamado_id, db, usuario,
-        StatusChamado.AGUARDANDO_RESPOSTA, StatusChamado.EM_ANDAMENTO,
+        chamado_id,
+        db,
+        usuario,
+        StatusChamado.AGUARDANDO_RESPOSTA,
+        StatusChamado.EM_ANDAMENTO,
     )
 
 
@@ -321,6 +355,7 @@ def resolver_chamado(
     chamado = _buscar(db, chamado_id, usuario, bloquear=True)
     _exigir_responsavel(chamado, usuario)
     _exigir_status(chamado, StatusChamado.EM_ANDAMENTO)
+
     chamado.status = StatusChamado.RESOLVIDO
     _registrar(
         db,
@@ -331,6 +366,7 @@ def resolver_chamado(
         chamado.status.value,
     )
     _registrar(db, chamado, usuario, "resolucao", novo=dados.resolucao)
+
     return _salvar(db, chamado)
 
 
@@ -339,6 +375,7 @@ def consultar_resolucao(
     chamado_id: ChamadoId, db: SessaoDb, usuario: UsuarioAtual
 ) -> dict:
     _buscar(db, chamado_id, usuario)
+
     registro = db.scalar(
         select(HistoricoChamado)
         .where(
@@ -347,10 +384,12 @@ def consultar_resolucao(
         )
         .order_by(HistoricoChamado.id.desc())
     )
+
     if registro is None:
         raise HTTPException(
             status.HTTP_404_NOT_FOUND, "Resolução não encontrada."
         )
+
     return {"resolucao": registro.novo, "criado_em": registro.criado_em}
 
 
@@ -361,6 +400,7 @@ def fechar_chamado(
     chamado = _buscar(db, chamado_id, usuario, bloquear=True)
     _exigir_solicitante(chamado, usuario)
     _exigir_status(chamado, StatusChamado.RESOLVIDO)
+
     chamado.status = StatusChamado.FECHADO
     chamado.concluido_em = agora_utc()
     _registrar(
@@ -372,6 +412,7 @@ def fechar_chamado(
         chamado.status.value,
     )
     _registrar(db, chamado, usuario, "fechamento")
+
     return _salvar(db, chamado)
 
 
@@ -385,6 +426,7 @@ def devolver_chamado(
     chamado = _buscar(db, chamado_id, usuario, bloquear=True)
     _exigir_solicitante(chamado, usuario)
     _exigir_status(chamado, StatusChamado.RESOLVIDO)
+
     chamado.status = StatusChamado.EM_ANDAMENTO
     _registrar(
         db,
@@ -395,6 +437,7 @@ def devolver_chamado(
         chamado.status.value,
     )
     _registrar(db, chamado, usuario, "devolucao", novo=dados.motivo)
+
     return _salvar(db, chamado)
 
 
@@ -407,13 +450,16 @@ def redistribuir_chamado(
 ) -> Chamados:
     _exigir_perfil(usuario, PerfilUsuario.ADMINISTRADOR)
     chamado = _buscar(db, chamado_id, usuario, bloquear=True)
+
     if chamado.id_tecnico is None or chamado.status == StatusChamado.FECHADO:
         raise HTTPException(
             status.HTTP_409_CONFLICT, "Chamado não pode ser redistribuído."
         )
+
     tecnico = db.scalar(
         select(Usuario).where(Usuario.id == dados.id_tecnico).with_for_update()
     )
+
     if (
         tecnico is None
         or not tecnico.ativo
@@ -423,6 +469,7 @@ def redistribuir_chamado(
             status.HTTP_422_UNPROCESSABLE_ENTITY,
             "Técnico inexistente ou inativo.",
         )
+
     if chamado.id_tecnico != tecnico.id:
         _registrar(
             db,
@@ -433,6 +480,7 @@ def redistribuir_chamado(
             str(tecnico.id),
         )
         chamado.id_tecnico = tecnico.id
+
     return _salvar(db, chamado)
 
 
@@ -449,12 +497,15 @@ def criar_comentario(
 ) -> ComentarioInterno:
     _exigir_perfil(usuario, PerfilUsuario.TECNICO)
     chamado = _buscar(db, chamado_id, usuario, bloquear=True)
+
     comentario = ComentarioInterno(
         id_chamado=chamado.id, id_usuario=usuario.id, conteudo=dados.conteudo
     )
+
     db.add(comentario)
     db.commit()
     db.refresh(comentario)
+
     return comentario
 
 
@@ -466,6 +517,7 @@ def listar_comentarios(
 ) -> list[ComentarioInterno]:
     _exigir_perfil(usuario, PerfilUsuario.TECNICO, PerfilUsuario.ADMINISTRADOR)
     _buscar(db, chamado_id, usuario)
+
     return list(
         db.scalars(
             select(ComentarioInterno)
@@ -483,6 +535,7 @@ def consultar_historico(
 ) -> list[HistoricoChamado]:
     _exigir_perfil(usuario, PerfilUsuario.ADMINISTRADOR)
     _buscar(db, chamado_id, usuario)
+
     return list(
         db.scalars(
             select(HistoricoChamado)

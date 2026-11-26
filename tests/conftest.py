@@ -85,12 +85,12 @@ def senha_hash():
 @pytest.fixture
 def criar_usuario(db, senha_hash):
     def criar(email, tipo=PerfilUsuario.FUNCIONARIO, ativo=True):
-        usuario = Usuario(nome="Usuário Teste", email=email, senha_hash=senha_hash,
-                          tipo=tipo, ativo=ativo)
+        usuario = Usuario(nome="Usuário Teste", email=email, senha_hash=senha_hash, tipo=tipo, ativo=ativo)
         db.add(usuario)
         db.commit()
         db.refresh(usuario)
         return usuario
+
     return criar
 
 
@@ -115,4 +115,5 @@ def autenticar(client):
         resposta = client.post("/auth/login", data={"username": usuario.email, "password": "senha-segura-123"})
         assert resposta.status_code == 200
         return {"Authorization": f"Bearer {resposta.json()['access_token']}"}
+
     return autenticar_usuario

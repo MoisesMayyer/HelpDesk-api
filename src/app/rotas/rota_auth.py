@@ -8,15 +8,18 @@ from pwdlib.exceptions import PwdlibError
 from sqlalchemy import select
 
 from app.dados.config import settings
-from app.dados.dependencies import SessaoDb, hash_senha, nao_autorizado, usuario_do_token
+from app.dados.dependencies import (
+    SessaoDb,
+    hash_senha,
+    nao_autorizado,
+    usuario_do_token,
+)
 from app.dados.models.usuario import Usuario
 from app.dados.rate_limit import LIMITE_LOGIN, limiter
 from app.rotas.validacao import RotaComValidacaoProtegida
 from app.schemas.token import RenovacaoToken, TokenAcesso, TokenLogin
 
-rota_auth = APIRouter(
-    prefix="/auth", tags=["autenticação"], route_class=RotaComValidacaoProtegida
-)
+rota_auth = APIRouter(prefix="/auth", tags=["autenticação"], route_class=RotaComValidacaoProtegida)
 
 # Faz uma verificação de custo semelhante mesmo quando o e-mail não existe.
 hash_ficticio = hash_senha.hash("senha fictícia para verificação")
@@ -43,10 +46,11 @@ def _emitir_token(usuario: Usuario, tipo: Literal["access", "refresh"]) -> str:
 @rota_auth.post("/login", response_model=TokenLogin)
 @limiter.limit(LIMITE_LOGIN)
 def login(
-    request: Request, response: Response,
-    formulario: Annotated[OAuth2PasswordRequestForm, Depends()], db: SessaoDb
+    request: Request,
+    response: Response,
+    formulario: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: SessaoDb,
 ) -> TokenLogin:
-
     usuario = db.scalar(select(Usuario).where(Usuario.email == formulario.username))
     hash_armazenado = usuario.senha_hash if usuario is not None else hash_ficticio
 
@@ -66,8 +70,6 @@ def login(
 
 @rota_auth.post("/refresh", response_model=TokenAcesso)
 def renovar_token(dados: RenovacaoToken, db: SessaoDb) -> TokenAcesso:
+    usuario = usuario_do_token(dados.refresh_token, "refresh", db, "Token de renovação inválido ou expirado.")
 
-    usuario = usuario_do_token(
-        dados.refresh_token, "refresh", db, "Token de renovação inválido ou expirado."
-    )
     return TokenAcesso(access_token=_emitir_token(usuario, "access"))

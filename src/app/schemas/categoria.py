@@ -4,9 +4,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictBool, StringConstraints
 
 from app.schemas.usuario import AtualizacaoParcial, Omitido
 
-NomeCategoria = Annotated[
-    str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)
-]
+NomeCategoria = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=150)]
 
 
 class CategoriaCriacao(BaseModel):
