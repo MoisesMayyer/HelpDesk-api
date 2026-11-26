@@ -1,0 +1,37 @@
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--fundo);
+  color: var(--texto);
+  font: 1rem/1.5 var(--fonte);
+}
+
+h1, h2, h3, p, dl, dd { margin: 0; }
+h1, h2, h3 { line-height: 1.2; overflow-wrap: anywhere; }
+h1 { font-size: clamp(1.5rem, 1.2rem + 1vw, 2rem); }
+h2 { font-size: 1.125rem; }
+h3 { font-size: 1rem; }
+p { overflow-wrap: anywhere; }
+a { color: var(--acao); text-underline-offset: 0.2em; }
+button, input, select, textarea { font: inherit; }
+button:not(:disabled), summary { cursor: pointer; }
+
+:focus-visible {
+  outline: 2px solid var(--foco);
+  outline-offset: 3px;
+}
+
+time, .numero, .paginacao { font-variant-numeric: tabular-nums; }
+
+.atalho {
+  position: fixed;
+  z-index: 5;
+  inset: var(--espaco-3) auto auto var(--espaco-3);
+  padding: var(--espaco-2) var(--espaco-4);
+  background: var(--superficie);
+  border-radius: var(--raio-controle);
+  transform: translateY(-160%);
+}
+
+.atalho:focus { transform: none; }

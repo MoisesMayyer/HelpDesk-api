@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 232" fill="none">
+  <defs>
+    <pattern id="grade" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#96afce" fill-opacity=".23"/>
+    </pattern>
+  </defs>
+  <path fill="url(#grade)" d="M0 0h400v232H0z"/>
+  <g stroke="#7593b8" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 28v-9a7 7 0 0 1 7-7h9m344 0h9a7 7 0 0 1 7 7v9M12 204v9a7 7 0 0 0 7 7h9m344 0h9a7 7 0 0 0 7-7v-9" opacity=".65"/>
+    <path d="M222 115h20a13 13 0 0 0 13-13V76a13 13 0 0 1 13-13h24M255 102v53a13 13 0 0 0 13 13h24" stroke-width="1.5"/>
+    <rect x="46" y="39" width="180" height="153" rx="9" fill="#122949" opacity=".55"/>
+    <rect x="38" y="47" width="180" height="153" rx="9" fill="#152f51" opacity=".75"/>
+    <rect x="30" y="55" width="180" height="153" rx="9" fill="#193658"/>
+    <path d="M30 86h180m-164-15h15" opacity=".7"/>
+    <path d="M171 71h1m9 0h1m9 0h1" stroke-width="2.5"/>
+  </g>
+  <g stroke-linecap="round" stroke-linejoin="round">
+    <rect x="44" y="100" width="152" height="38" rx="6" fill="#22486c" stroke="#78afd0"/>
+    <path d="M56 112h15v10h-9l-6 4zm27 5h64m-64 7h39" stroke="#9addf9" stroke-width="1.5"/>
+    <circle cx="180" cy="119" r="3" fill="#38bdf8"/>
+    <path d="M45 148h150m-150 24h150" stroke="#7593b8" opacity=".45"/>
+    <path d="M56 159h13m13 0h51m-77 24h13m13 0h68" stroke="#7593b8" stroke-width="2"/>
+    <circle cx="219" cy="115" r="3.5" fill="#0f2342" stroke="#8aabc9" stroke-width="1.5"/>
+    <circle cx="255" cy="115" r="3.5" fill="#0f2342" stroke="#38bdf8" stroke-width="1.5"/>
+    <rect x="292" y="36" width="58" height="54" rx="8" fill="#193658" stroke="#7593b8"/>
+    <path d="M311 64v-3a10 10 0 0 1 20 0v3m-20-3h-2v9h6v-9h-4zm20 0h2v9h-6v-9h4zm0 9a5 5 0 0 1-5 5h-5" stroke="#c4dbef" stroke-width="1.5"/>
+    <rect x="292" y="140" width="78" height="56" rx="8" fill="#20496c" stroke="#38bdf8"/>
+    <circle cx="316" cy="168" r="10" stroke="#9addf9" stroke-width="1.5"/>
+    <path d="m312 168 3 3 5-6m15 0h21m-21 7h13" stroke="#9addf9" stroke-width="1.5"/>
+  </g>
+</svg>

@@ -1,0 +1,63 @@
+@font-face {
+  font-family: Inter;
+  src: url("../assets/fontes/inter-latin.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+}
+
+:root {
+  color-scheme: light;
+  --marinho: #0b2144;
+  --azul-claro: #61beff;
+  --acao: #0866c6;
+  --acao-hover: #0754a3;
+  --fundo: #f2f6fb;
+  --superficie: #ffffff;
+  --texto: #000000;
+  --secundario: #40546d;
+  --borda: #d5e0ec;
+  --borda-controle: #61758c;
+  --info: #164a7b;
+  --info-fundo: #e8f4ff;
+  --sucesso: #166344;
+  --sucesso-fundo: #e9f7f0;
+  --alerta: #764b00;
+  --alerta-fundo: #fff4d8;
+  --prioridade-alta: #9a3412;
+  --prioridade-alta-fundo: #ffedd5;
+  --erro: #9f2229;
+  --erro-fundo: #fdecef;
+  --espaco-1: 0.25rem;
+  --espaco-2: 0.5rem;
+  --espaco-3: 0.75rem;
+  --espaco-4: 1rem;
+  --espaco-5: 1.5rem;
+  --espaco-6: 2rem;
+  --raio-controle: 6px;
+  --raio-painel: 10px;
+  --sombra-sobreposicao: 0 10px 32px rgb(11 33 68 / 16%);
+  --fonte: system-ui, sans-serif;
+  --fonte-menor: 0.875rem;
+  --alvo: 2.75rem;
+  --foco: var(--acao);
+
+  --corporativo-marinho: #0f2342;
+  --corporativo-primario: #2563eb;
+  --corporativo-primario-hover: #1d4ed8;
+  --corporativo-destaque: #38bdf8;
+  --corporativo-fundo: #f8fafc;
+  --corporativo-texto: #0f172a;
+  --corporativo-secundario: #64748b;
+  --corporativo-borda: #e2e8f0;
+  --corporativo-borda-controle: #8492a6;
+  --corporativo-nav-ativo: #1b365c;
+  --corporativo-nav-secundario: #c2d2e7;
+  --corporativo-erro: #dc2626;
+  --corporativo-erro-texto: #b91c1c;
+  --corporativo-erro-fundo: #fef2f2;
+  --corporativo-fonte: Inter, var(--fonte);
+  --espaco-7: 2.5rem;
+  --espaco-8: 3rem;
+  --raio-medio: 8px;
+}
