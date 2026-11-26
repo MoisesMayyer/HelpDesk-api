@@ -26,6 +26,7 @@ API REST para suporte técnico interno de uma empresa. Funcionários abrem e aco
 - **Fila de atendimento:** técnicos assumem chamados disponíveis, com proteção contra atribuição simultânea do mesmo chamado a dois técnicos. Administradores podem redistribuir atendimentos.
 - **Ciclo do chamado:** a API valida as mudanças de status. O técnico responsável registra a solução; só o solicitante pode fechar o chamado ou devolvê-lo para atendimento.
 - **Consultas e supervisão:** listagem com filtros, ordenação e paginação, comentários internos e histórico de alterações. Administradores gerenciam usuários e categorias e consultam o histórico.
+- **Interface web:** frontend em `docs/` para entrar, abrir e acompanhar chamados, atender solicitações e administrar contas e categorias conforme o perfil.
 
 ## Perfis de acesso
 
@@ -70,6 +71,34 @@ API REST para suporte técnico interno de uma empresa. Funcionários abrem e aco
 Na listagem, é possível filtrar por status, prioridade, categoria, técnico responsável ou ausência de técnico. Por exemplo, `GET /chamados?status=aberto&sem_tecnico=true` mostra os chamados disponíveis na fila de atendimento. Por padrão, a API retorna até 20 chamados, dos mais recentes para os mais antigos. Use `limite` (até 100) e `deslocamento` para paginar; a resposta não inclui o total de registros.
 
 Consulte o [Swagger](http://127.0.0.1:8000/docs) ou o [ReDoc](http://127.0.0.1:8000/redoc) para ver os campos e as respostas de cada rota.
+
+## Utilizar a interface web
+
+O frontend está em `docs/` e utiliza a API. Para uso local, primeiro inicie a API conforme a seção abaixo; em seguida, sirva o diretório `docs/` por um servidor web local e abra a página `index.html` pelo endereço fornecido por esse servidor. Não abra o arquivo diretamente como `file://`. A configuração padrão do frontend chama a API pelo caminho `/api`; se o servidor web não encaminhar `/api` para a API em `http://127.0.0.1:8000`, configure `VITE_API_BASE` no ambiente de build do frontend com a URL-base acessível da API. O projeto não documenta um comando de desenvolvimento ou publicação do frontend; não há um procedimento de deploy incluído aqui.
+
+### Entrar e criar contas
+
+Não há cadastro público de contas. Na tela de login, **Solicite uma conta** apenas informa que o usuário deve pedir ao administrador da empresa que a crie; não envia uma solicitação nem cria a conta.
+
+Em uma instalação nova:
+
+1. Crie o primeiro administrador pela API, usando `POST /usuario/inicializar-admin` no Swagger. Envie `nome`, `email` e `senha`; essa rota está disponível somente enquanto o banco ainda não tem usuários.
+2. Entre na interface com o e-mail e a senha definidos. O administrador inicial é encaminhado à lista de chamados.
+3. Abra **Usuários** e use **Novo usuário** para cadastrar cada pessoa. Informe nome, e-mail e senha inicial. As contas novas começam como **Funcionário**.
+4. Para conceder acesso de técnico ou administrador, use **Editar acesso** na conta correspondente. Também é possível desativar uma conta; contas desativadas não conseguem entrar.
+5. Abra **Categorias** e crie pelo menos uma categoria ativa antes de abrir chamados.
+
+O usuário pode alterar nome, e-mail e senha em **Minha conta**. Alterar a própria senha encerra a sessão e exige novo login. Não existe recuperação de senha pela interface.
+
+### Fluxo por perfil
+
+- **Funcionário:** em **Meus chamados**, abre um chamado com título, categoria ativa e descrição; acompanha somente as próprias solicitações. Quando o técnico registra uma solução, pode confirmar o fechamento ou devolver o chamado informando por que o problema persiste.
+- **Técnico:** usa **Fila** para localizar chamados abertos sem responsável e assumir um deles. Em **Em meu atendimento**, acompanha os chamados atribuídos a si. Pode classificar prioridade, corrigir categoria, registrar comentários internos, aguardar uma resposta, retomar o atendimento e registrar a solução. Apenas o técnico responsável pode executar as ações de atendimento que dependem da atribuição.
+- **Administrador:** consulta chamados e gerencia usuários e categorias. Pode redistribuir chamados já atribuídos para outro técnico ativo e consultar o histórico do chamado. O perfil administrativo não inclui automaticamente as ações exclusivas de técnico.
+
+Nas listas, é possível filtrar por status, prioridade e categoria; perfis com acesso ampliado também podem filtrar por técnico ou por chamados sem responsável. Os filtros avançados permitem ordenar os resultados. Se uma ação ou página não estiver disponível para o perfil, a interface pode ocultá-la, mas a API continua sendo a responsável por validar as permissões.
+
+**Atenção:** a interface não torna a configuração adequada para produção. A API atual inclui a rota de desenvolvimento `PATCH /usuario/admin`, que permite a qualquer usuário autenticado promover a própria conta a administrador. Não exponha o serviço publicamente sem remover ou proteger essa rota e revisar a inicialização do primeiro administrador.
 
 ## Executar localmente
 
