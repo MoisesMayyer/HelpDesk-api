@@ -7,6 +7,7 @@
 ![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-4479A1?logo=mysql&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?logo=docker&logoColor=white)
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-D71F00?logo=sqlalchemy&logoColor=white)
 ![Alembic](https://img.shields.io/badge/Alembic-6BA81E)
 ![PyJWT](https://img.shields.io/badge/PyJWT-000000?logo=jsonwebtokens&logoColor=white)
@@ -100,35 +101,21 @@ Nas listas, é possível filtrar por status, prioridade e categoria; perfis com 
 
 **Atenção:** a interface não torna a configuração adequada para produção. A API atual inclui a rota de desenvolvimento `PATCH /usuario/admin`, que permite a qualquer usuário autenticado promover a própria conta a administrador. Não exponha o serviço publicamente sem remover ou proteger essa rota e revisar a inicialização do primeiro administrador.
 
-## Executar localmente
+## Como rodar
 
-Você precisa de Python 3.11+ e de um servidor MySQL acessível com um banco já criado. O Alembic cria as tabelas, mas não cria o banco. Na raiz do projeto, crie e ative um ambiente virtual e instale a aplicação:
+### Com Docker Compose
 
-```sh
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -e .
-cp .env.example .env
+Requisitos: Git, Docker e o plugin Docker Compose. O Compose inicia somente a API e o banco.
+
+```bash
+git clone https://github.com/MoisesMayyer/HelpDesk-api
+cd HelpDesk-api
+docker compose up --build
 ```
 
-No Windows, ative o ambiente com `.venv\Scripts\activate` no Prompt de Comando ou `.venv\Scripts\Activate.ps1` no PowerShell, e copie o arquivo com `copy .env.example .env`.
+O Compose inicia o MySQL e a API, aguarda o banco ficar saudável e aplica as migrações antes de iniciar a aplicação. A API fica disponível em **http://localhost:8000** e a documentação em **http://localhost:8000/docs**.
 
-Edite `.env` e preencha `DATABASE_URL` (por exemplo, `mysql+pymysql://usuario:senha@localhost:3306/nome_do_banco?charset=utf8mb4`) e `SECRET_KEY` com uma chave aleatória de pelo menos 32 bytes. Gere uma chave com `python -c "import secrets; print(secrets.token_hex(32))"`. Não versione o `.env` nem compartilhe suas credenciais.
-
-Na raiz do projeto, aplique as migrações e inicie a API:
-
-```sh
-alembic upgrade head
-python -m uvicorn app.main:app --reload
-```
-
-Abra o [Swagger](http://127.0.0.1:8000/docs). Em um banco novo:
-
-1. Use `POST /usuario/inicializar-admin` com `nome`, `email` e `senha` para criar o primeiro administrador. A rota é pública, exige MySQL e só funciona enquanto não existir nenhum usuário no banco, mesmo inativo.
-2. Faça login em `POST /auth/login`, usando o e-mail no campo `username` e a senha em `password`. No Swagger, autorize-se com o token de acesso.
-3. Crie uma categoria em `POST /categoria` antes de abrir o primeiro chamado. Não há categoria inicial automática em um banco novo.
-
-Para executar os testes, instale também as dependências opcionais com `python -m pip install -e '.[test]'`.
+Para parar os serviços, use `Ctrl+C` e depois `docker compose down`. Os dados do MySQl permanecem no volume `dados_mysql`; para removê-los também, use `docker compose down -v`.
 
 ## Testes
 

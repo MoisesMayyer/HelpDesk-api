@@ -1,0 +1,30 @@
+services:
+  db:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: helpdesk
+      MYSQL_USER: helpdesk
+      MYSQL_PASSWORD: local-docker
+      MYSQL_ROOT_PASSWORD: local-docker-root
+    volumes:
+      - dados_mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p\"$$MYSQL_ROOT_PASSWORD\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 60s
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SECRET_KEY: chave-local-apenas-para-desenvolvimento
+      DATABASE_URL: mysql+pymysql://helpdesk:local-docker@db:3306/helpdesk?charset=utf8mb4
+    ports:
+      - "8000:8000"
+
+volumes:
+  dados_mysql:
